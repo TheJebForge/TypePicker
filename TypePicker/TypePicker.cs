@@ -14,7 +14,7 @@ namespace TypePicker
     {
         public override string Name => "TypePicker";
         public override string Author => "TheJebForge"; // Ported by art0007i :)
-        public override string Version => "1.0.0";
+        public override string Version => "2.0.0";
 
         public override void OnEngineInit()
         {
