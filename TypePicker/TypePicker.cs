@@ -29,14 +29,39 @@ namespace TypePicker
             var fields = (SyncRefList<TextField>)selector.GetSyncMember("_customGenericArguments");
 
             ReferenceField<IWorldElement> refField = selector.FindNearestParent<Slot>().GetComponentOrAttach<ReferenceField<IWorldElement>>();
-            SyncRef<TextField> field = selector.FindNearestParent<Slot>().GetComponentOrAttach<ReferenceField<TextField>>().Reference;
-            selector.RunInUpdates(1, () => field.Target = fields.FirstOrDefault());
+
+            // max amount of generic params is ushort.MaxValue (I checked this myself)
+            var paramIndex = selector.FindNearestParent<Slot>().GetComponentOrAttach<ValueField<ushort>>().Value;
+            paramIndex.Value = 0;
+
+            // Make the Generic Param Name clickable to select which one you put into.
+            selector.RunInUpdates(1, () => {
+                // if there's only a single there's no point in generating this
+                if (fields.Count <= 1) return;
+                for (int i = 0; i < fields.Count; i++)
+                {
+                    var f = fields[i];
+                    var textSlot = f.Slot.Parent.Parent[0][0];
+                    var btn = textSlot.AttachComponent<Button>();
+                    var text = textSlot.GetComponent<Text>();
+                    btn.SetupBackgroundColor(text.Color);
+                    btn.ColorDrivers.FirstOrDefault().DisabledColor.Value = RadiantUI_Constants.Hero.GREEN;
+                    var radio = textSlot.AttachComponent<ValueRadio<ushort>>();
+                    radio.OptionValue.Value = (ushort)i;
+                    radio.TargetValue.Target = paramIndex;
+                    var bvd = textSlot.AttachComponent<BooleanValueDriver<bool>>();
+                    bvd.FalseValue.Value = true;
+                    bvd.TrueValue.Value = false;
+                    bvd.TargetField.Target = btn.EnabledField;
+                    radio.CheckVisual.Target = bvd.State;
+                }
+            });
 
             SyncMemberEditorBuilder.Build(refField.Reference, "Type picker", null, ui);
             ui.HorizontalLayout(8f);
             {
-                ui.Button("Base type").LocalPressed += (button, data) => SetType(field, FindBaseType(refField));
-                ui.Button("Inner type").LocalPressed += (button, data) => SetType(field, FindInnerType(refField));
+                ui.Button("Base type").LocalPressed += (button, data) => SetType(fields[paramIndex.Value], FindBaseType(refField));
+                ui.Button("Inner type").LocalPressed += (button, data) => SetType(fields[paramIndex.Value], FindInnerType(refField));
             }
             ui.NestOut();
 
@@ -44,10 +69,10 @@ namespace TypePicker
 
             ui.HorizontalLayout(8f);
             {
-                ui.Button("SyncRef").LocalPressed += (button, data) => SetType(field, CastToSyncRef(refField));
-                ui.Button("SyncRef Inner").LocalPressed += (button, data) => SetType(field, CastToSyncRefInner(refField));
-                ui.Button("IField").LocalPressed += (button, data) => SetType(field, CastToIField(refField));
-                ui.Button("IField Inner").LocalPressed += (button, data) => SetType(field, CastToIFieldInner(refField));
+                ui.Button("SyncRef").LocalPressed += (button, data) => SetType(fields[paramIndex.Value], CastToSyncRef(refField));
+                ui.Button("SyncRef Inner").LocalPressed += (button, data) => SetType(fields[paramIndex.Value], CastToSyncRefInner(refField));
+                ui.Button("IField").LocalPressed += (button, data) => SetType(fields[paramIndex.Value], CastToIField(refField));
+                ui.Button("IField Inner").LocalPressed += (button, data) => SetType(fields[paramIndex.Value], CastToIFieldInner(refField));
             }
             ui.NestOut();
         }
@@ -106,9 +131,9 @@ namespace TypePicker
             }
         }
 
-        static void SetType(SyncRef<TextField> field, Type type) {
+        static void SetType(TextField field, Type type) {
             try {
-                field.Target.Editor.Target.Text.Target.Text = type.FullName;
+                field.Editor.Target.Text.Target.Text = type.FullName;
             }
             catch (Exception) {
                 // ignored
