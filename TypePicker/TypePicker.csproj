@@ -21,7 +21,7 @@
         <DebugType Condition="'$(Configuration)'=='Release'">None</DebugType>
         <Authors>TheJebForge</Authors>
         <PackageId>TypePicker</PackageId>
-        <Version>2.0.2</Version>
+        <Version>2.0.3</Version>
     </PropertyGroup>
     <ItemGroup>
         <Reference Include="HarmonyLib">
